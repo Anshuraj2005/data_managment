@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_category_id'])
     $delete_id = intval($_POST['delete_category_id']);
 
     // Delete category (files will be deleted too if ON DELETE CASCADE is set)
-    $stmt = $conn->prepare("DELETE FROM categories WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM dms_categories WHERE id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_category_id'])
 
 // Fetch all categories
 $categories = [];
-$res = $conn->query("SELECT * FROM categories ORDER BY name");
+$res = $conn->query("SELECT * FROM dms_categories ORDER BY name");
 while ($row = $res->fetch_assoc()) {
     $categories[] = $row;
 }
@@ -35,7 +35,7 @@ $selected_cat = null;
 $files = [];
 
 if ($selected_cat_id > 0) {
-    $stmt = $conn->prepare("SELECT * FROM categories WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM dms_categories WHERE id = ?");
     $stmt->bind_param("i", $selected_cat_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -43,7 +43,7 @@ if ($selected_cat_id > 0) {
     $stmt->close();
 
     if ($selected_cat) {
-        $stmt = $conn->prepare("SELECT * FROM files WHERE category_id = ?");
+        $stmt = $conn->prepare("SELECT * FROM dms_files WHERE category_id = ?");
         $stmt->bind_param("i", $selected_cat_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -66,7 +66,7 @@ if ($selected_cat_id > 0) {
   <aside class="w-64 bg-gray-900 text-white min-h-screen p-8 shadow-lg flex flex-col">
     <h2 class="text-3xl font-extrabold mb-10 tracking-wide">User Panel</h2>
     <nav class="space-y-6 flex-grow">
-      <a href="dashboard.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">🏠 Dashboard</a>
+      <a href="admin_dashboard.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">🏠 Dashboard</a>
       <a href="add_category.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">➕ Add Category</a>
       <a href="show_category.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">📂 Show Categories</a>
       <a href="add_file.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">📁 Add File</a>
@@ -78,68 +78,92 @@ if ($selected_cat_id > 0) {
   </aside>
 
   <!-- Main Content -->
-  <main class="flex-1 p-12 max-w-5xl mx-auto">
-    <h1 class="text-4xl font-bold mb-10 border-b-4 border-blue-600 pb-3">Categories</h1>
+ <main class="flex-1 p-12 max-w-5xl mx-auto">
+  <!-- Page Title -->
+  <h1 class="text-4xl font-extrabold mb-10 border-b-4 border-blue-600 pb-3 flex items-center gap-2">
+    📂 Categories
+  </h1>
 
-    <!-- List of Categories -->
-    <?php if (count($categories) === 0): ?>
-      <p class="text-lg text-gray-600 italic">No categories found.</p>
-    <?php else: ?>
-      <ul class="mb-12 space-y-3">
-        <?php foreach ($categories as $cat): ?>
-          <li class="flex items-center justify-between">
-            <a href="?cat_id=<?= $cat['id'] ?>"
-               class="flex items-center text-xl font-semibold hover:text-blue-700 hover:underline transition duration-200 <?= ($selected_cat_id === $cat['id']) ? 'text-blue-800 underline' : 'text-gray-800' ?>">
-              
-              <!-- Folder Icon SVG -->
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h4l3 3h11v9H3V7z" />
+  <!-- Category List -->
+  <?php if (count($categories) === 0): ?>
+    <p class="text-lg text-gray-600 italic">No categories found.</p>
+  <?php else: ?>
+    <ul class="mb-12 space-y-4">
+      <?php foreach ($categories as $cat): ?>
+        <li class="flex items-center justify-between bg-white shadow-md hover:shadow-lg p-4 rounded-lg transition duration-300">
+          <!-- Category Name -->
+          <a href="?cat_id=<?= $cat['id'] ?>"
+            class="flex items-center text-xl font-semibold hover:text-blue-700 transition duration-200 <?= ($selected_cat_id === $cat['id']) ? 'text-blue-800 underline' : 'text-gray-800' ?>">
+            
+            <!-- Folder Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h4l3 3h11v9H3V7z" />
+            </svg>
+
+            <?= htmlspecialchars($cat['name']) ?>
+          </a>
+
+          <!-- Delete Button -->
+          <form method="POST" onsubmit="return confirm('Are you sure you want to delete this category and all its files?');">
+            <input type="hidden" name="delete_category_id" value="<?= $cat['id'] ?>">
+            <button type="submit" class="ml-4 flex items-center text-red-600 hover:text-red-800 text-sm border border-red-500 px-3 py-1 rounded hover:bg-red-50 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
+              Delete
+            </button>
+          </form>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  <?php endif; ?>
 
-              <?= htmlspecialchars($cat['name']) ?>
-            </a>
+  <!-- Files in Selected Category -->
+  <?php if ($selected_cat): ?>
+    <h2 class="text-3xl font-bold mb-6 border-b-2 border-gray-300 pb-2">
+      Files in "<span class="text-blue-700"><?= htmlspecialchars($selected_cat['name']) ?></span>"
+    </h2>
 
-            <form method="POST" onsubmit="return confirm('Are you sure you want to delete this category and all its files?');">
-              <input type="hidden" name="delete_category_id" value="<?= $cat['id'] ?>">
-              <button type="submit" class="ml-4 text-red-600 hover:text-red-800 text-sm border border-red-500 px-3 py-1 rounded">
-                Delete
-              </button>
-            </form>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-    <?php endif; ?>
-
-    <!-- Files in selected category -->
-    <?php if ($selected_cat): ?>
-      <h2 class="text-3xl font-bold mb-6 border-b-2 border-gray-300 pb-2">
-        Files in "<span class="text-blue-700"><?= htmlspecialchars($selected_cat['name']) ?></span>"
-      </h2>
-      <?php if (empty($files)): ?>
-        <p class="text-gray-500 italic text-lg">No files uploaded in this category.</p>
-      <?php else: ?>
-        <ul class="list-disc list-inside space-y-3 max-w-3xl text-lg">
+    <?php if (empty($files)): ?>
+      <p class="text-gray-500 italic text-lg">No files uploaded in this category.</p>
+    <?php else: ?>
+      <div class="bg-white rounded-lg shadow p-6">
+        <ul class="divide-y divide-gray-200">
           <?php foreach ($files as $file): 
             $file_path = '/' . $file['filepath']; 
           ?>
-            <li class="flex items-center justify-between">
-              <a href="<?= htmlspecialchars($file_path) ?>" target="_blank" class="text-blue-600 hover:underline flex-grow">
+            <li class="py-4 flex items-center justify-between">
+              <!-- File Name -->
+              <a href="<?= htmlspecialchars($file_path) ?>" target="_blank" class="text-blue-600 hover:underline font-medium flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
                 <?= htmlspecialchars($file['filename']) ?>
               </a>
-              <a href="<?= htmlspecialchars($file_path) ?>" download
-                 class="ml-4 text-sm text-green-700 hover:text-green-900 font-medium">
-                [Download]
-              </a>
-              <small class="ml-6 text-gray-400 whitespace-nowrap">(Uploaded: <?= $file['uploaded_at'] ?>)</small>
+
+              <div class="flex items-center space-x-6">
+                <!-- Download -->
+                <a href="<?= htmlspecialchars($file_path) ?>" download
+                  class="text-green-700 hover:text-green-900 flex items-center font-medium text-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16V4H4zm4 10h8m-4-4v4" />
+                  </svg>
+                  Download
+                </a>
+
+                <!-- Upload Time -->
+                <small class="text-gray-400 whitespace-nowrap">(Uploaded: <?= $file['uploaded_at'] ?>)</small>
+              </div>
             </li>
           <?php endforeach; ?>
         </ul>
-      <?php endif; ?>
-
-    <?php elseif ($selected_cat_id > 0): ?>
-      <p class="text-red-600 text-lg font-semibold">Category not found.</p>
+      </div>
     <?php endif; ?>
 
-  </main>
+  <?php elseif ($selected_cat_id > 0): ?>
+    <p class="text-red-600 text-lg font-semibold">Category not found.</p>
+  <?php endif; ?>
+</main>
+
 </body>
 </html>

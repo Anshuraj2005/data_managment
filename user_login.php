@@ -9,7 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
 
-    $stmt = $conn->prepare("SELECT password FROM login WHERE username = ?");
+    $stmt = $conn->prepare("SELECT password FROM dms_login WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $stmt->store_result();
@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($password === $db_password) {
             $_SESSION['username'] = $username;
-            $message = "✅ Login successful! Redirecting to dashboard...";
+            $message = "✅ Login successful! Redirecting...";
             $redirect = true;
         } else {
             $message = "❌ Incorrect password.";
@@ -35,56 +35,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>User Login Page</title>
+  <title>User Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <?php if ($redirect): ?>
-    <meta http-equiv="refresh" content="2;url=Dashboard/user_dashboard.php">
+    <meta http-equiv="refresh" content="2;url=Dashboard/dashboard.php">
   <?php endif; ?>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <section class="flex bg-white rounded-lg shadow-lg max-w-4xl w-full">
-    <div class="hidden md:block w-1/2">
-      <img 
-        src="assets/user_login_img.jpg" 
-        alt="Login Image" 
-        class="object-cover h-full w-full rounded-l-lg"
-      />
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-r from-sky-400 to-blue-600">
+  <div class="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden w-full max-w-5xl">
+    
+    <!-- Left Image Section -->
+    <div class="md:w-1/2 hidden md:block">
+      <img src="assets/user_login_img.jpg" alt="Login" class="w-full h-full object-cover">
     </div>
-    <div class="w-full md:w-1/2 p-8">
-      <form action="" method="POST" class="space-y-6">
-        <h1 class="text-3xl font-semibold text-center text-gray-700 mb-6">User Login Page</h1>
 
-        <?php if ($message): ?>
-          <p class="text-center <?= $redirect ? 'text-green-600' : 'text-red-600' ?>">
-            <?= htmlspecialchars($message) ?>
-          </p>
-        <?php endif; ?>
-        
-        <input 
-          type="text" 
-          name="username" 
-          placeholder="Enter your name" 
-          required
-          class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>"
-        />
-        
-        <input 
-          type="password" 
-          name="password" 
-          placeholder="Enter your password" 
-          required
-          class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        
+    <!-- Right Login Form -->
+    <div class="md:w-1/2 w-full p-10 flex flex-col justify-center">
+      <h2 class="text-4xl font-bold text-gray-800 mb-2 text-center">User Login</h2>
+      <p class="text-gray-500 text-center mb-6">Access your account securely</p>
+
+      <?php if ($message): ?>
+        <p class="text-center mb-4 <?= $redirect ? 'text-green-600' : 'text-red-600' ?>">
+          <?= htmlspecialchars($message) ?>
+        </p>
+      <?php endif; ?>
+
+      <form action="" method="POST" class="space-y-5">
+        <div>
+          <label class="block text-gray-700 mb-2">Username</label>
+          <input 
+            type="text" 
+            name="username" 
+            placeholder="Enter your username" 
+            required
+            value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Password</label>
+          <input 
+            type="password" 
+            name="password" 
+            placeholder="Enter your password" 
+            required
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
         <button 
           type="submit" 
-          class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-300"
         >
           Login
         </button>
       </form>
     </div>
-  </section>
+  </div>
 </body>
 </html>

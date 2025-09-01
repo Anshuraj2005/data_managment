@@ -9,7 +9,7 @@ if (!isset($_SESSION['username'])) {
 
 // Fetch all categories
 $categories = [];
-$res = $conn->query("SELECT * FROM categories ORDER BY name");
+$res = $conn->query("SELECT * FROM dms_categories ORDER BY name");
 while ($row = $res->fetch_assoc()) {
     $categories[] = $row;
 }
@@ -21,7 +21,7 @@ $files = [];
 
 if ($selected_cat_id > 0) {
     // Fetch selected category details
-    $stmt = $conn->prepare("SELECT * FROM categories WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM dms_categories WHERE id = ?");
     $stmt->bind_param("i", $selected_cat_id);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -30,7 +30,7 @@ if ($selected_cat_id > 0) {
 
     // Fetch files in this category
     if ($selected_cat) {
-        $stmt = $conn->prepare("SELECT * FROM files WHERE category_id = ?");
+        $stmt = $conn->prepare("SELECT * FROM dms_files WHERE category_id = ?");
         $stmt->bind_param("i", $selected_cat_id);
         $stmt->execute();
         $result = $stmt->get_result();

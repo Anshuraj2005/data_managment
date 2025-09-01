@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
         $relative_path = 'uploads/' . $cat_id . '/' . $unique_name;
 
         if (move_uploaded_file($file_tmp, $target_path)) {
-            $stmt = $conn->prepare("INSERT INTO files (category_id, filename, filepath) VALUES (?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO dms_files (category_id, filename, filepath) VALUES (?, ?, ?)");
             $stmt->bind_param("iss", $cat_id, $unique_name, $relative_path);
             if ($stmt->execute()) {
                 $success_message = "✅ File uploaded successfully.";
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_file'])) {
 
 // Fetch categories
 $categories = [];
-$res = $conn->query("SELECT * FROM categories ORDER BY name");
+$res = $conn->query("SELECT * FROM dms_categories ORDER BY name");
 if ($res) {
     while ($row = $res->fetch_assoc()) {
         $categories[] = $row;
@@ -80,7 +80,7 @@ if ($res) {
   <aside class="w-64 bg-gray-900 text-white min-h-screen p-8 shadow-lg flex flex-col">
     <h2 class="text-3xl font-extrabold mb-10 tracking-wide">User Panel</h2>
     <nav class="space-y-6 flex-grow">
-      <a href="dashboard.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">🏠 Dashboard</a>
+      <a href="admin_dashboard.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">🏠 Dashboard</a>
       <a href="add_category.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">➕ Add Category</a>
       <a href="show_category.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">📂 Show Categories</a>
       <a href="add_file.php" class="block hover:bg-blue-700 p-3 rounded transition duration-200">📁 Add File</a>
@@ -92,39 +92,65 @@ if ($res) {
   </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-10">
-      <div class="max-w-xl mx-auto bg-white shadow p-6 rounded">
-        <h1 class="text-2xl font-bold mb-4">Upload File to Category</h1>
+<main class="flex-1 p-10 bg-gray-50 min-h-screen flex justify-center items-center">
+  <div class="max-w-xl w-full bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
+    <h1 class="text-3xl font-extrabold mb-6 text-gray-800 text-center">
+      📤 Upload File to Category
+    </h1>
 
-        <?php if ($file_error): ?>
-          <div class="text-red-600 mb-4"><?= htmlspecialchars($file_error) ?></div>
-        <?php endif; ?>
-
-        <?php if ($success_message): ?>
-          <div class="text-green-600 mb-4"><?= htmlspecialchars($success_message) ?></div>
-        <?php endif; ?>
-
-        <form method="POST" enctype="multipart/form-data" class="space-y-4">
-          <div>
-            <label class="block mb-1 font-semibold">Select Category</label>
-            <select name="category_id" required class="w-full border px-3 py-2 rounded">
-              <option value="">-- Choose Category --</option>
-              <?php foreach ($categories as $cat): ?>
-                <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div>
-            <label class="block mb-1 font-semibold">Select File</label>
-            <input type="file" name="file" required class="w-full border px-3 py-2 rounded" />
-          </div>
-
-          <button type="submit" name="upload_file"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload</button>
-        </form>
+    <!-- Error Message -->
+    <?php if ($file_error): ?>
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
+        <?= htmlspecialchars($file_error) ?>
       </div>
-    </main>
+    <?php endif; ?>
+
+    <!-- Success Message -->
+    <?php if ($success_message): ?>
+      <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded">
+        <?= htmlspecialchars($success_message) ?>
+      </div>
+    <?php endif; ?>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+      <!-- Category Selection -->
+      <div>
+        <label class="block mb-2 font-semibold text-gray-700 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h4l3 3h11v9H3V7z" />
+          </svg>
+          Select Category
+        </label>
+        <select name="category_id" required
+          class="w-full border border-gray-300 px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition">
+          <option value="">-- Choose Category --</option>
+          <?php foreach ($categories as $cat): ?>
+            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <!-- File Input -->
+      <div>
+        <label class="block mb-2 font-semibold text-gray-700 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Select File
+        </label>
+        <input type="file" name="file" required
+          class="w-full border border-gray-300 px-4 py-3 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400 transition bg-gray-50" />
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" name="upload_file"
+        class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition duration-300">
+        ✅ Upload File
+      </button>
+    </form>
+  </div>
+</main>
+
   </div>
 </body>
 </html>
